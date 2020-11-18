@@ -23,9 +23,12 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
     if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
 
         VmSize=$(grep 'VmSize' $entry_basename/status)
+        Vmsize_final=$(cut -d " " $VmSize) # Ficamos aqui, precisamos de obter apenas o numero.
+        echo $Vmsize_final
         VmRSS=$(grep 'VmRSS' $entry_basename/status)
         rchar=$(grep 'rchar' $entry_basename/io)
         wchar=$(grep 'wchar' $entry_basename/io)
-        printf '%s %s \n' "${VmSize[@]}" "${VmRSS[@]}"
+        #printf '%s %s \n' "${VmSize[@]}" "${VmRSS[@]}"
+        #printf '%s\n' "${VmSize[@]}"
     fi
 done
