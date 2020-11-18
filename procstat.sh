@@ -26,6 +26,6 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
         VmRSS=$(grep 'VmRSS' $entry_basename/status)
         rchar=$(grep 'rchar' $entry_basename/io)
         wchar=$(grep 'wchar' $entry_basename/io)
-        printf '%s %s' "${VmSize[@]}" "${VmRSS[@]}"
+        printf '%s %s \n' "${VmSize[@]}" "${VmRSS[@]}"
     fi
 done
