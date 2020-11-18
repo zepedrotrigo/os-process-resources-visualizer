@@ -21,6 +21,11 @@ cd /proc # Mudar a diretoria para /proc
 for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
     entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) 
     if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
-        cat $entry_basename/status
+
+        VmSize=$(grep 'VmSize' $entry_basename/status)
+        VmRSS=$(grep 'VmRSS' $entry_basename/status)
+        rchar=$(grep 'rchar' $entry_basename/io)
+        wchar=$(grep 'wchar' $entry_basename/io)
+        printf '%s %s' "${VmSize[@]}" "${VmRSS[@]}"
     fi
 done
