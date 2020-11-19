@@ -2,7 +2,7 @@
 # awk, bc, cat, cut, date, getopts, grep, head, ls, printf, sleep, sort
 
 cd /proc # Mudar a diretoria para /proc
-printf '%-10s\t %10s\t %10s\t %10s\t %10s\t %10s\t %10s\t %3s\t %6s\t %5s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
+printf '%-20s\t %-10s\t %10s\t %10s\t %10s\t %10s\t %10s\t %3s\t %6s\t %5s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
 
 for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
     entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
@@ -31,7 +31,7 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
         #    user = "xxxx"
         #fi
 
-        printf '%-10s\t %10s\t %10s\t %10s\t %10s\t %10s\t %9s\t %5s\t %6s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "****" "****" "****"
+        printf '%-20s\t %-10s\t %10s\t %10s\t %10s\t %10s\t %9s\t %5s\t %6s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "****" "****" "****"
     fi
 done
 
