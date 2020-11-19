@@ -27,7 +27,7 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
             VmRSS_value="0"
         fi 
 
-        printf '%s\t %s\t %s\t %s\t %s\t %s\t %s\t %s\t %s\t %s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "placeholder" "placeholder" "placeholder"
+        printf '%s\t %s\t %s\t %s\t %s\t %s\t %s\t %s\t %s\t %s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "****" "****" "****"
     fi
 done
 
