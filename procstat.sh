@@ -27,6 +27,10 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
             VmRSS_value="0"
         fi 
 
+        #if [[ ${#user} -gt 15 ]] ; then
+        #    user = "xxxx"
+        #fi
+
         printf '%-10s\t %10s\t %10s\t %10s\t %10s\t %10s\t %9s\t %5s\t %6s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "****" "****" "****"
     fi
 done
