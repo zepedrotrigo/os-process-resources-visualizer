@@ -52,7 +52,7 @@ if [[ $# -lt 100 ]]; then
     done
     printf 'Read rate: %s\t Write rate: %s\n' "${read_rate_array[@]}" "${write_rate_array[@]}"
 
-#--------------------------- Imprimir cabeçalho da tabela------------------------------------------
+    #--------------------------- Imprimir cabeçalho da tabela------------------------------------------
     printf '%-20s\t\t %-10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %3s\t %6s\t %5s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
 
     for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
@@ -87,10 +87,3 @@ if [[ $# -lt 100 ]]; then
 else
     echo "Invalid arguments"
 fi
-
-# rchar vai ser o readb, wchar -> writeb, e o rater e ratew são a taxa de leitura/escrita em bytes por segundo dos processos
-
-#taxa de leitura/escrita (calcular as taxas de I/O)
-#(em bytes por segundo) dos processos seleccionados nos últimos s segundos (calculadas a partir de 2
-#leituras de /proc/[pid]/io com intervalo de s segundos)
-# ultimos s segundos, s é passado como argumento
