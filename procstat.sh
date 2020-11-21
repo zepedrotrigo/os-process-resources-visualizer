@@ -12,13 +12,13 @@ read_io () {
         entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
         if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
 
-            #Primeira leitura dos valores rchar e wchar
-            rchar=$(grep 'rchar' $entry_basename/io)
-            rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
+            # Leitura dos valores rchar e wchar
+            rchar=$(grep 'rchar' $entry_basename/io) # Obter todas as linhas com VmSize
+            rchar_value=$(echo $rchar | grep -o -E '[0-9]+') # Obter apenas o valor numérico
             wchar=$(grep 'wchar' $entry_basename/io)
             wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
 
-            rchar_array+=($rchar_value)
+            rchar_array+=($rchar_value) #Guardar o valor num array
             wchar_array+=($wchar_value)
         fi
     done
@@ -38,23 +38,24 @@ if [[ $# -lt 100 ]]; then
     read_io # ler rchar e wchar pela 1ª vez
     first_rchar_array=("${rchar_array[@]}") # Copiar array da 1ª leitura uma vez que
     first_wchar_array=("${wchar_array[@]}") # vai ser overwritten
-    sleep $1 # Esperar s segundos
+    sleep $1 # Esperar s segundos #TODO can't divide by zero, robust programi
     read_io # ler rchar e wchar pela 2ª vez
 
     for i in ${!rchar_array[@]}; do # Calcular read rate e write rate em Bytes/s
-        read_rate=${rchar_array[i]}# - ${first_rchar_array[i]}# / $1
-        write_rate=${wchar_array[i]}# - ${first_wchar_array[i]}# / $1
+        op1=${rchar_array[i]}
+        op2=${first_rchar_array[i]}
+        read_rate=$(echo "scale=1; ($op1 - $op2)/$1" | bc)
+        op1=${wchar_array[i]}
+        op2=${first_wchar_array[i]}
+        write_rate=$(echo "scale=1; ($op1 - $op2)/$1" | bc)
+
         read_rate_array+=($read_rate)
-        write_rate_array+=($write_rate) #TODO
-        echo "valor de i: " $i
-        echo "read_rate: " $read_rate
-        echo "write_Rate: " $write_rate
+        write_rate_array+=($write_rate)
     done
-    printf 'Read rate: %s\t Write rate: %s\n' "${read_rate_array[@]}" "${write_rate_array[@]}"
-
     #--------------------------- Imprimir cabeçalho da tabela------------------------------------------
-    printf '%-20s\t\t %-10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %3s\t %6s\t %5s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
+    printf '%-20s\t\t %-10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
 
+    counter=0
     for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
         entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
         if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
@@ -65,12 +66,11 @@ if [[ $# -lt 100 ]]; then
             VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
             VmRSS=$(grep 'VmRSS' $entry_basename/status)
             VmRSS_value=$(echo $VmRSS | grep -o -E '[0-9]+')
-
-            #Primeira leitura dos valores rchar e wchar
             rchar=$(grep 'rchar' $entry_basename/io)
             rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
             wchar=$(grep 'wchar' $entry_basename/io)
             wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
+            process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
 
             if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
                 VmSize_value="N/A"
@@ -80,7 +80,8 @@ if [[ $# -lt 100 ]]; then
                 VmRSS_value="N/A"
             fi 
 
-            #printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %5s\t %6s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "****" "****" "****"
+            printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
+            (( counter++ ))
         fi
     done
 
