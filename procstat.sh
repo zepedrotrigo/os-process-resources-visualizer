@@ -71,6 +71,8 @@ if [[ $# -lt 100 ]]; then
             wchar=$(grep 'wchar' $entry_basename/io)
             wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
             process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
+            #process_date = $( ls -ld /proc/$entry_basename | cut -d' ' -f 6,7,8)
+            echo $process_date
 
             if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
                 VmSize_value="N/A"
@@ -80,7 +82,7 @@ if [[ $# -lt 100 ]]; then
                 VmRSS_value="N/A"
             fi 
 
-            printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
+            #printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
             (( counter++ ))
         fi
     done
