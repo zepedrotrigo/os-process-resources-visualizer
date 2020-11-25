@@ -71,7 +71,7 @@ if [[ $# -lt 100 ]]; then
             wchar=$(grep 'wchar' $entry_basename/io)
             wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
             process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
-            #process_date = $( ls -ld /proc/$entry_basename | cut -d' ' -f 6,7,8)
+            #usar o comando cut -d' ' -f ou usar o comando awk
             echo $process_date
 
             if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
