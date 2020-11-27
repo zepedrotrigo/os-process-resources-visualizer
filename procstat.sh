@@ -13,7 +13,7 @@ read_io () {
         if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
 
             # Leitura dos valores rchar e wchar
-            rchar=$(grep 'rchar' $entry_basename/io) # Obter todas as linhas com VmSize
+            rchar=$(grep 'rchar' $entry_basename/io) # Obter todas as linhas com rchar
             rchar_value=$(echo $rchar | grep -o -E '[0-9]+') # Obter apenas o valor numérico
             wchar=$(grep 'wchar' $entry_basename/io)
             wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
@@ -53,7 +53,7 @@ if [[ $# -lt 100 ]]; then
         write_rate_array+=($write_rate)
     done
     #--------------------------- Imprimir cabeçalho da tabela------------------------------------------
-    printf '%-20s\t\t %-10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
+    printf '%-20s\t\t %-10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %12s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
 
     counter=0
     for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
@@ -71,8 +71,7 @@ if [[ $# -lt 100 ]]; then
             wchar=$(grep 'wchar' $entry_basename/io)
             wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
             process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
-            #usar o comando cut -d' ' -f ou usar o comando awk
-            echo $process_date
+            process_date=$(echo $process_date | awk '{ print $6" "$7" "$8}')
 
             if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
                 VmSize_value="N/A"
@@ -82,7 +81,7 @@ if [[ $# -lt 100 ]]; then
                 VmRSS_value="N/A"
             fi 
 
-            #printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
+            printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
             (( counter++ ))
         fi
     done
