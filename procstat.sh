@@ -1,7 +1,10 @@
 #!/bin/bash
 # awk, bc, cat, cut, date, getopts, grep, head, ls, printf, sleep, sort
-
+#TODO mismatch entre os valores do read_io e do print abaixo. Podem estar desalinhados
+# deve ter a ver com a variavel counter
+#TODO VALIDAR TODOS OS VALORES IMPRESSOS
 #-----------------------------------------Declaração de Funções-------------------------------------
+
 read_io () {
 
     cd /proc/ # Mudar para a diretoria /proc/
@@ -24,15 +27,41 @@ read_io () {
         fi
     done
 }
+
 #------------------------------------------Main program---------------------------------------------
+#------------------------------------------Argumentos de entrada------------------------------------
 
-if [[ $# -lt 100 ]]; then
-
+if [[ $# -lt 100 ]]; then #TODO 
     cd /proc # Mudar a diretoria para /proc
+    while getopts "cseupmtdwr:" OPTION; do #TODO time é o argument -1. Podemos ir busca-lo assim
+        case $OPTION in
+        c)
+            c=${OPTARG}
+            ;;
+        s)
+            s=${OPTARG}
+            ;;
+        e)
+            e=${OPTARG}
+            ;;
+        u)
+            u=${OPTARG}
+            ;;
+        p)
+            p=${OPTARG}
+            ;;
+        *)
+            echo "Invalid options provided"
+            exit 1
+            ;;
+        esac
+    done
+
+echo "s = ${s}"
 
 
-
-    # ---------------------- Ler taxa de IO no intervalo de s segundos ----------------------------
+# ----------------------------------- Ler taxa de IO no intervalo de s segundos ----------------------------
+    
     read_rate_array=() #Inicializar arrays
     write_rate_array=()
 
@@ -53,8 +82,10 @@ if [[ $# -lt 100 ]]; then
         read_rate_array+=($read_rate)
         write_rate_array+=($write_rate)
     done
+
     #--------------------------- Imprimir cabeçalho da tabela------------------------------------------
-    printf '%-20s\t\t %-10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %12s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
+    
+    printf '%-20s\t\t %10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %12s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
 
     counter=0
     for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
@@ -84,10 +115,11 @@ if [[ $# -lt 100 ]]; then
 
                 printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
                 (( counter++ ))
+                #TODO ver se estamos a imprimir o ultimo elemento do array
             fi
         fi
     done
 
 else
-    echo "Invalid arguments"
+    echo "Invalid options provided"
 fi
