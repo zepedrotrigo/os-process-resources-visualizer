@@ -33,26 +33,41 @@ read_io () {
 
 if [[ $# -lt 100 ]]; then #TODO 
     cd /proc # Mudar a diretoria para /proc
-    while getopts ":c:s:e:u:p:m:t:d:w:r:"  OPTION; do #TODO time é o argument -1. Podemos ir busca-lo assim
+    while getopts "c:s:e:u:p:mtdwr"  OPTION; do #TODO time é o argument -1. Podemos ir busca-lo assim
         if [[ ${OPTARG} == -* ]]; then
             echo "Missing argument for -${OPTION}"
             exit 1
         fi
         case $OPTION in
         c)
-            c=${OPTARG}
+            flag_c=${OPTARG}
             ;;
         s)
-            s=${OPTARG}
+            flag_s=${OPTARG}
             ;;
         e)
-            e=${OPTARG}
+            flag_e=${OPTARG}
             ;;
         u)
-            u=${OPTARG}
+            flag_u=${OPTARG}
             ;;
         p)
-            p=${OPTARG}
+            flag_p=${OPTARG}
+            ;;
+        m)
+            flag_m=1
+            ;;    
+        t)
+            flag_t=1
+            ;;  
+        d)
+            flag_d=1
+            ;; 
+        w)
+            flag_w=1
+            ;;   
+        r)
+            flag_r=1
             ;;
         *)
             echo "Invalid options provided"
@@ -62,10 +77,6 @@ if [[ $# -lt 100 ]]; then #TODO
     done
 
     shift $((OPTIND-1))
-
-    echo "s = ${s}"
-    echo "c = ${c}"
-
 
 # ----------------------------------- Ler taxa de IO no intervalo de s segundos ----------------------------
     
@@ -99,30 +110,38 @@ if [[ $# -lt 100 ]]; then #TODO
         entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
         if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
             if [[ -r "$entry/io" && -r "$entry/comm" && -r "$entry/status" ]] ; then
-                comm=$(cat $entry_basename/comm)
-                user="$( ps -o uname= -p "${entry_basename}" )"
-                VmSize=$(grep 'VmSize' $entry_basename/status) # Obter todas as linhas com VmSize
-                VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
-                VmRSS=$(grep 'VmRSS' $entry_basename/status)
-                VmRSS_value=$(echo $VmRSS | grep -o -E '[0-9]+')
-                rchar=$(grep 'rchar' $entry_basename/io)
-                rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
-                wchar=$(grep 'wchar' $entry_basename/io)
-                wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
-                process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
-                process_date=$(echo $process_date | awk '{ print $6" "$7" "$8}')
+                #if flag exists and condiçao; if flag2 exist and condicao
+                if [[ $flag_c =~ "" ]]; then
+                    comm=$(cat $entry_basename/comm)
+                    if [[ "$comm" == *"$flag_c"* ]]; then
+                        comm=$(cat $entry_basename/comm)
+                        user="$( ps -o uname= -p "${entry_basename}" )"
+                        VmSize=$(grep 'VmSize' $entry_basename/status) # Obter todas as linhas com VmSize
+                        VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
+                        VmRSS=$(grep 'VmRSS' $entry_basename/status)
+                        VmRSS_value=$(echo $VmRSS | grep -o -E '[0-9]+')
+                        rchar=$(grep 'rchar' $entry_basename/io)
+                        rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
+                        wchar=$(grep 'wchar' $entry_basename/io)
+                        wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
+                        process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
+                        process_date=$(echo $process_date | awk '{ print $6" "$7" "$8}')
 
-                if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-                    VmSize_value="N/A"
+                        if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+                            VmSize_value="N/A"
+                        fi
+
+                        if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+                            VmRSS_value="N/A"
+                        fi 
+
+                        printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
+                        (( counter++ ))
+                        #TODO ver se estamos a imprimir o ultimo elemento do array
+                    else
+                        :
+                    fi
                 fi
-
-                if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-                    VmRSS_value="N/A"
-                fi 
-
-                printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
-                (( counter++ ))
-                #TODO ver se estamos a imprimir o ultimo elemento do array
             fi
         fi
     done
