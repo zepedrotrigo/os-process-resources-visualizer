@@ -11,15 +11,16 @@ read_io () {
     for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
         entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
         if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
+            if [[ -r "$entry/io" ]] ; then
+                # Leitura dos valores rchar e wchar
+                rchar=$(grep 'rchar' $entry_basename/io) # Obter todas as linhas com rchar
+                rchar_value=$(echo $rchar | grep -o -E '[0-9]+') # Obter apenas o valor numérico
+                wchar=$(grep 'wchar' $entry_basename/io)
+                wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
 
-            # Leitura dos valores rchar e wchar
-            rchar=$(grep 'rchar' $entry_basename/io) # Obter todas as linhas com rchar
-            rchar_value=$(echo $rchar | grep -o -E '[0-9]+') # Obter apenas o valor numérico
-            wchar=$(grep 'wchar' $entry_basename/io)
-            wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
-
-            rchar_array+=($rchar_value) #Guardar o valor num array
-            wchar_array+=($wchar_value)
+                rchar_array+=($rchar_value) #Guardar o valor num array
+                wchar_array+=($wchar_value)
+            fi
         fi
     done
 }
@@ -59,30 +60,31 @@ if [[ $# -lt 100 ]]; then
     for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
         entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
         if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
+            if [[ -r "$entry/io" && -r "$entry/comm" && -r "$entry/status" ]] ; then
+                comm=$(cat $entry_basename/comm)
+                user="$( ps -o uname= -p "${entry_basename}" )"
+                VmSize=$(grep 'VmSize' $entry_basename/status) # Obter todas as linhas com VmSize
+                VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
+                VmRSS=$(grep 'VmRSS' $entry_basename/status)
+                VmRSS_value=$(echo $VmRSS | grep -o -E '[0-9]+')
+                rchar=$(grep 'rchar' $entry_basename/io)
+                rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
+                wchar=$(grep 'wchar' $entry_basename/io)
+                wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
+                process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
+                process_date=$(echo $process_date | awk '{ print $6" "$7" "$8}')
 
-            comm=$(cat $entry_basename/comm)
-            user="$( ps -o uname= -p "${entry_basename}" )"
-            VmSize=$(grep 'VmSize' $entry_basename/status) # Obter todas as linhas com VmSize
-            VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
-            VmRSS=$(grep 'VmRSS' $entry_basename/status)
-            VmRSS_value=$(echo $VmRSS | grep -o -E '[0-9]+')
-            rchar=$(grep 'rchar' $entry_basename/io)
-            rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
-            wchar=$(grep 'wchar' $entry_basename/io)
-            wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
-            process_date=$(ls -ld /proc/$entry_basename) #TODO compor a data
-            process_date=$(echo $process_date | awk '{ print $6" "$7" "$8}')
+                if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+                    VmSize_value="N/A"
+                fi
 
-            if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-                VmSize_value="N/A"
+                if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+                    VmRSS_value="N/A"
+                fi 
+
+                printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
+                (( counter++ ))
             fi
-
-            if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-                VmRSS_value="N/A"
-            fi 
-
-            printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$entry_basename" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "${read_rate_array[counter]}" "${write_rate_array[counter]}" "$process_date"
-            (( counter++ ))
         fi
     done
 
