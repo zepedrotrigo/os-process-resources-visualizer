@@ -33,7 +33,11 @@ read_io () {
 
 if [[ $# -lt 100 ]]; then #TODO 
     cd /proc # Mudar a diretoria para /proc
-    while getopts "cseupmtdwr:" OPTION; do #TODO time é o argument -1. Podemos ir busca-lo assim
+    while getopts ":c:s:e:u:p:m:t:d:w:r:"  OPTION; do #TODO time é o argument -1. Podemos ir busca-lo assim
+        if [[ ${OPTARG} == -* ]]; then
+            echo "Missing argument for -${OPTION}"
+            exit 1
+        fi
         case $OPTION in
         c)
             c=${OPTARG}
@@ -57,7 +61,10 @@ if [[ $# -lt 100 ]]; then #TODO
         esac
     done
 
-echo "s = ${s}"
+    shift $((OPTIND-1))
+
+    echo "s = ${s}"
+    echo "c = ${c}"
 
 
 # ----------------------------------- Ler taxa de IO no intervalo de s segundos ----------------------------
