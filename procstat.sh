@@ -3,9 +3,11 @@
 #TODO can't divide by zero no sleep $1
 #TODO testar meter arg no -c mas nao meter arg no -u
 #TODO nao deixar meter vários sorts
+#TODO será que está a ir buscar bem o time? Testar fazendo um echo $1
 cd /proc
 sort_parameter=1
 sort_reverse=""
+flag_p=2147483647
 #-----------------------------------------Declaração de Funções-------------------------------------
 read_io () {
     rchar_array=() # Inicializar arrays
@@ -47,12 +49,16 @@ process_list () {
             VmRSS_value="N/A"
         fi
 
+        if [ $counter -ge $flag_p ]; then
+            break
+        fi
         printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$pid" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "$rater" "$ratew" "$process_date"
         (( counter++ ))
+
     done  | sort -n -k $sort_parameter $sort_reverse
 }
 #------------------------------------------Argumentos de entrada------------------------------------
-while getopts "c:s:e:u:p:mtdwr"  OPTION; do #TODO time é o argument -1. Podemos ir busca-lo assim
+while getopts "c:s:e:u:p:mtdwr"  OPTION; do
     if [[ ${OPTARG} == -* ]]; then
         echo "Missing argument for -${OPTION}"
         exit 1
