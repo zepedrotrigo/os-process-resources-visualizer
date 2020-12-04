@@ -4,10 +4,14 @@
 #TODO testar meter arg no -c mas nao meter arg no -u
 #TODO nao deixar meter vários sorts
 #TODO será que está a ir buscar bem o time? Testar fazendo um echo $1
+#TODO VALIDAR TODOS OS ARGS DAS FLAGS
+#TODO exit no program se metermos um -s e nao metermos um -e ou vice versa.
 cd /proc
 sort_parameter=1
 sort_reverse=""
 flag_p=2147483647
+flag_s=""
+flag_e=""
 #-----------------------------------------Declaração de Funções-------------------------------------
 read_io () {
     rchar_array=() # Inicializar arrays
@@ -106,26 +110,38 @@ shift $((OPTIND-1))
 pid_list=()
 pid_list2=()
 pid_list3=()
+pid_list4=()
+min_date=$(date -d "${flag_s}" +"%s")
+max_date=$(date -d "${flag_e}" +"%s")
 for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
     entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
     if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
-        if [[ -r "$entry/io" && -r "$entry/comm" && -r "$entry/status" ]] ; then # Obter apenas folders com permissões de leitura
+        if [ -r "$entry/io" ] && [ -r "$entry/comm" ] && [ -r "$entry/status" ] && [ -r "/proc/$entry_basename" ] ; then # Obter apenas folders com permissões de leitura
             
             # Lista com os PIDs todos (que permitem leitura)
             pid_list+=($entry_basename) #Guardar esses folders num array que vai ser utilizada na função process_list
             
-            # Lista com PIDs que não contêm a FLAG -C
+            # Lista com PIDs que não contêm a FLAG -c
             if [[ $flag_c != "" ]]; then
                 comm=$(cat $entry_basename/comm)
                 if ! [[ $comm =~ $flag_c ]]; then
                     pid_list2+=($entry_basename)
                 fi
             fi
-            # Lista com PIDs que não contêm a flag -U
+            # Lista com PIDs que não contêm a flag -u
             if [[ $flag_u != "" ]]; then
                 user="$( ps -o uname= -p "${entry_basename}" )"
                 if ! [[ $user =~ $flag_u ]]; then
                 pid_list3+=($entry_basename)
+                fi
+            fi
+            # Lista com PIDs que estão no intervalo de tempo definido pelas flags -s e -e
+            if [[ $flag_s != "" && $flag_e != "" ]]; then
+                pid_date=$(ls -ld /proc/$entry_basename)
+                pid_date=$(echo $pid_date | awk '{ print $6" "$7" "$8}')
+                pid_date=$(date -d "${pid_date}" +"%s")
+                if [ $pid_date -lt $min_date ] || [ $pid_date -gt $max_date ]; then
+                    pid_list4+=($entry_basename)
                 fi
             fi
         fi
@@ -133,12 +149,17 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
 done
 
 # Subtrair arrays com PIDS que não contêm as flags ao array com os PIDs todos
+echo ${#pid_list[@]} - ${#pid_list2[@]} - ${#pid_list3[@]} - ${#pid_list4[@]}
 for i in "${pid_list2[@]}"; do
     pid_list=(${pid_list[@]//*$i*})
 done
 for i in "${pid_list3[@]}"; do
     pid_list=(${pid_list[@]//*$i*})
 done
+for i in "${pid_list4[@]}"; do
+    pid_list=(${pid_list[@]//*$i*})
+done
+echo ${#pid_list[@]}
 # ----------------------------------- Ler taxa de IO no intervalo de s segundos ----------------------------
 read_rate_array=() #Inicializar arrays
 write_rate_array=()
