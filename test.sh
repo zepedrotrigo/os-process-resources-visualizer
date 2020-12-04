@@ -56,3 +56,4 @@ done
 #    echo "$key : y1 = ${array[$key,y1]}"
 #    echo "$key : y2 = ${array[$key,y2]}"
 #done
+echo ${#pid_list[@]} - ${#pid_list2[@]} - ${#pid_list3[@]} - ${#pid_list4[@]}
