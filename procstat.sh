@@ -2,7 +2,10 @@
 #TODO no such file or directory
 #TODO can't divide by zero no sleep $1
 #TODO testar meter arg no -c mas nao meter arg no -u
+#TODO nao deixar meter vários sorts
 cd /proc
+sort_parameter=1
+sort_reverse=""
 #-----------------------------------------Declaração de Funções-------------------------------------
 read_io () {
     rchar_array=() # Inicializar arrays
@@ -45,9 +48,8 @@ process_list () {
         fi
 
         printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$pid" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "$rater" "$ratew" "$process_date"
-
         (( counter++ ))
-    done 
+    done  | sort -n -k $sort_parameter $sort_reverse
 }
 #------------------------------------------Argumentos de entrada------------------------------------
 while getopts "c:s:e:u:p:mtdwr"  OPTION; do #TODO time é o argument -1. Podemos ir busca-lo assim
@@ -72,19 +74,19 @@ while getopts "c:s:e:u:p:mtdwr"  OPTION; do #TODO time é o argument -1. Podemos
         flag_p=${OPTARG}
         ;;
     m)
-        flag_m=1
+        sort_parameter=4
         ;;    
     t)
-        flag_t=1
+        sort_parameter=5
         ;;  
     d)
-        flag_d=1
+        sort_parameter=8
         ;; 
     w)
-        flag_w=1
+        sort_parameter=9
         ;;   
     r)
-        flag_r=1
+        sort_reverse="-r"
         ;;
     *)
         echo "Invalid options provided"
@@ -151,11 +153,6 @@ for i in ${!rchar_array[@]}; do # Calcular read rate e write rate em Bytes/s
     read_rate_array+=($read_rate)
     write_rate_array+=($write_rate)
 done
-#-------------------------------------- Aplicar argumentos das flags ----------------------------------------------------------------
-process_list # devolve um array de processos
-
-#-------------------------------------------- Imprimir tabela ----------------------------------------------------------------
+#-------------------------------------- Imprimir tabela ----------------------------------------------------------------
 printf '%-20s\t\t %10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %12s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
-#for pid in ${pid_list[@]}; do
-#    printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "${associative_array_of_processes[$pid,"comm"]}" "${associative_array_of_processes[$pid,"user"]}" "$pid" "${associative_array_of_processes[$pid,"VmSize"]}" "${associative_array_of_processes[$pid,"VmRSS"]}" "${associative_array_of_processes[$pid,"rchar"]}" "${associative_array_of_processes[$pid,"wchar"]}" "${associative_array_of_processes[$pid,"rater"]}" "${associative_array_of_processes[$pid,"ratew"]}" "${associative_array_of_processes[$pid,"date"]}"
-#done
+process_list # devolve um array de processos

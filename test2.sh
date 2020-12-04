@@ -1,17 +1,14 @@
-#!/bin/bash
-declare -A matrix
-num_rows=4
-num_columns=5
-
-for ((i=1;i<=num_rows;i++)) do
-    for ((j=1;j<=num_columns;j++)) do
-        matrix[$i,$j]=$RANDOM
+for group in "${subgroups[@]}"; do
+    declare -n lst="$group"
+    echo "group name: ${group} with group members: ${lst[@]}"
+    for element in "${lst[@]}"; do
+        echo -en "\tworking on $element of the $group group\n"
     done
 done
 
-#for key in "${keys[@]}"; do
-#
-#    #the loop contents are the same
-#    echo "$key : y1 = ${array[$key,y1]}"
-#    echo "$key : y2 = ${array[$key,y2]}"
-#done
+for pid in arr:
+    arr = {pid : [comm,user,vmrss,rate,ratew], pid : [comm,user,vmrss,rater,ratew]}
+
+for key in "${!MYARRAY[@]}"; do
+  printf '%s:%s\n' "$key" "${MYARRAY[$key]}"
+done | sort -t : -k 2n
