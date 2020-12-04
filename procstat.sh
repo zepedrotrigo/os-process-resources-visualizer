@@ -1,5 +1,7 @@
 #!/bin/bash
 #TODO no such file or directory
+#TODO can't divide by zero no sleep $1
+#TODO testar meter arg no -c mas nao meter arg no -u
 cd /proc
 #-----------------------------------------Declaração de Funções-------------------------------------
 read_io () {
@@ -42,15 +44,8 @@ process_list () {
             VmRSS_value="N/A"
         fi
 
-        associative_array_of_processes[$pid,"comm"]=$comm
-        associative_array_of_processes[$pid,"user"]=$user
-        associative_array_of_processes[$pid,"VmSize"]=$VmSize_value
-        associative_array_of_processes[$pid,"VmRSS"]=$VmRSS_value
-        associative_array_of_processes[$pid,"rchar"]=$rchar_value
-        associative_array_of_processes[$pid,"wchar"]=$wchar_value
-        associative_array_of_processes[$pid,"date"]=$process_date
-        associative_array_of_processes[$pid,"rater"]=$rater
-        associative_array_of_processes[$pid,"ratew"]=$ratew
+        printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$pid" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "$rater" "$ratew" "$process_date"
+
         (( counter++ ))
     done 
 }
@@ -99,24 +94,50 @@ while getopts "c:s:e:u:p:mtdwr"  OPTION; do #TODO time é o argument -1. Podemos
 done
 
 shift $((OPTIND-1))
-#------------------------------------------Obter lista de PIDs-------------------------------------------------------
+#------------------------------------------Obter listas de PIDs-------------------------------------------------------
 pid_list=()
+pid_list2=()
+pid_list3=()
 for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
     entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
     if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
         if [[ -r "$entry/io" && -r "$entry/comm" && -r "$entry/status" ]] ; then # Obter apenas folders com permissões de leitura
+            
+            # Lista com os PIDs todos (que permitem leitura)
             pid_list+=($entry_basename) #Guardar esses folders num array que vai ser utilizada na função process_list
+            
+            # Lista com PIDs que não contêm a FLAG -C
+            if [[ $flag_c != "" ]]; then
+                comm=$(cat $entry_basename/comm)
+                if ! [[ $comm =~ $flag_c ]]; then
+                    pid_list2+=($entry_basename)
+                fi
+            fi
+            # Lista com PIDs que não contêm a flag -U
+            if [[ $flag_u != "" ]]; then
+                user="$( ps -o uname= -p "${entry_basename}" )"
+                if ! [[ $user =~ $flag_u ]]; then
+                pid_list3+=($entry_basename)
+                fi
+            fi
         fi
     fi
+done
+
+# Subtrair arrays com PIDS que não contêm as flags ao array com os PIDs todos
+for i in "${pid_list2[@]}"; do
+    pid_list=(${pid_list[@]//*$i*})
+done
+for i in "${pid_list3[@]}"; do
+    pid_list=(${pid_list[@]//*$i*})
 done
 # ----------------------------------- Ler taxa de IO no intervalo de s segundos ----------------------------
 read_rate_array=() #Inicializar arrays
 write_rate_array=()
-
 read_io # ler rchar e wchar pela 1ª vez
 first_rchar_array=("${rchar_array[@]}") # Copiar array da 1ª leitura uma vez que
 first_wchar_array=("${wchar_array[@]}") # vai ser overwritten
-sleep $1 # Esperar s segundos #TODO can't divide by zero, robust programi
+sleep $1 # Esperar s segundos
 read_io # ler rchar e wchar pela 2ª vez
 
 for i in ${!rchar_array[@]}; do # Calcular read rate e write rate em Bytes/s
@@ -130,19 +151,11 @@ for i in ${!rchar_array[@]}; do # Calcular read rate e write rate em Bytes/s
     read_rate_array+=($read_rate)
     write_rate_array+=($write_rate)
 done
+#-------------------------------------- Aplicar argumentos das flags ----------------------------------------------------------------
+process_list # devolve um array de processos
+
 #-------------------------------------------- Imprimir tabela ----------------------------------------------------------------
-declare -A associative_array_of_processes
-process_list # function
-
 printf '%-20s\t\t %10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %12s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
-for pid in ${pid_list[@]}; do
-    printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "${associative_array_of_processes[$pid,"comm"]}" "${associative_array_of_processes[$pid,"user"]}" "$pid" "${associative_array_of_processes[$pid,"VmSize"]}" "${associative_array_of_processes[$pid,"VmRSS"]}" "${associative_array_of_processes[$pid,"rchar"]}" "${associative_array_of_processes[$pid,"wchar"]}" "${associative_array_of_processes[$pid,"rater"]}" "${associative_array_of_processes[$pid,"ratew"]}" "${associative_array_of_processes[$pid,"date"]}"
-done
-
-#if flag exists and condiçao; if flag2 exist and condicao
-#if [[ $flag_c =~ "" ]]; then
-#    comm=$(cat $entry_basename/comm)
-#    if [[ $comm =~ $flag_c ]]; then
-#        display_process $entry_basename
-#    else
-#        :
+#for pid in ${pid_list[@]}; do
+#    printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "${associative_array_of_processes[$pid,"comm"]}" "${associative_array_of_processes[$pid,"user"]}" "$pid" "${associative_array_of_processes[$pid,"VmSize"]}" "${associative_array_of_processes[$pid,"VmRSS"]}" "${associative_array_of_processes[$pid,"rchar"]}" "${associative_array_of_processes[$pid,"wchar"]}" "${associative_array_of_processes[$pid,"rater"]}" "${associative_array_of_processes[$pid,"ratew"]}" "${associative_array_of_processes[$pid,"date"]}"
+#done

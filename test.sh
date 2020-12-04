@@ -37,6 +37,10 @@ associative_array_of_processes[$pid,"date"]=$process_date
 for key in "${!associative_array_of_processes[@]}"; do
 
     echo "$key ${associative_array_of_processes[$key]}"
+    unset $key
+    sleep 1
+    echo ${associative_array_of_processes[1]}
+    sleep 1
 done
 
 #declare -A array
