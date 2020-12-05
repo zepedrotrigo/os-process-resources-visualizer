@@ -1,12 +1,8 @@
 #!/bin/bash
-#TODO no such file or directory
-#TODO can't divide by zero no sleep $1
-#TODO testar meter arg no -c mas nao meter arg no -u
-#TODO nao deixar meter vários sorts
-#TODO será que está a ir buscar bem o time? Testar fazendo um echo $1
-#TODO VALIDAR TODOS OS ARGS DAS FLAGS
-#TODO exit no program se metermos um -s e nao metermos um -e ou vice versa.
-#TODO o sudo estraga a subtraçao de arrays.
+#TODO a flag das datas nao esta a funcionar bem
+#TODO validar args datas (ver se o user insere uma data com o formato valido)
+#TODO ULTIMO o sudo estraga a subtraçao de arrays. (experimentar fazer permutaçoes de ifs)
+#TODO ALINHAR CABEÇALHO
 cd /proc
 sort_parameter=1
 sort_reverse=""
@@ -18,48 +14,55 @@ read_io () {
     rchar_array=() # Inicializar arrays
     wchar_array=()
     for pid in ${pid_list[@]}; do
-        # Leitura dos valores rchar e wchar
-        rchar=$(grep 'rchar' $pid/io) # Obter todas as linhas com rchar
-        rchar_value=$(echo $rchar | grep -o -E '[0-9]+') # Obter apenas o valor numérico
-        wchar=$(grep 'wchar' $pid/io)
-        wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
-        #Guardar valores de rchar e wchar em arrays
-        rchar_array+=($rchar_value)
-        wchar_array+=($wchar_value)
+        if [ -e /proc/$pid ]; then # verificar se a diretoria ainda existe
+            # Leitura dos valores rchar e wchar
+            rchar=$(grep 'rchar' $pid/io) # Obter todas as linhas com rchar
+            rchar_value=$(echo $rchar | grep -o -E '[0-9]+') # Obter apenas o valor numérico
+            wchar=$(grep 'wchar' $pid/io)
+            wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
+            #Guardar valores de rchar e wchar em arrays
+            rchar_array+=($rchar_value)
+            wchar_array+=($wchar_value)
+        else
+            rchar_array+=(0) # Se o processo entretanto terminar, preencher o array com 0 à mesma
+            wchar_array+=(0) # para não haver incompatibilidade de indexes na função process_list
+#                              que utiliza os valores destes arrays
+        fi
     done
 }
 
 process_list () {
     counter=0
-    for pid in ${pid_list[@]}; do 
-        comm=$(cat $pid/comm)
-        user="$( ps -o uname= -p "${pid}" )"
-        VmSize=$(grep 'VmSize' $pid/status) # Obter todas as linhas com VmSize
-        VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
-        VmRSS=$(grep 'VmRSS' $pid/status)
-        VmRSS_value=$(echo $VmRSS | grep -o -E '[0-9]+')
-        rchar=$(grep 'rchar' $pid/io)
-        rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
-        wchar=$(grep 'wchar' $pid/io)
-        wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
-        process_date=$(ls -ld /proc/$pid)
-        process_date=$(echo $process_date | awk '{ print $6" "$7" "$8}')
-        rater=${read_rate_array[counter]}
-        ratew=${write_rate_array[counter]}
+    for pid in ${pid_list[@]}; do
+        if [ -e /proc/$pid ]; then # verificar se a diretoria ainda existe
+            comm=$(cat $pid/comm | tr " " "_")
+            user="$( ps -o uname= -p "${pid}" )"
+            VmSize=$(grep 'VmSize' $pid/status) # Obter todas as linhas com VmSize
+            VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
+            VmRSS=$(grep 'VmRSS' $pid/status)
+            VmRSS_value=$(echo $VmRSS | grep -o -E '[0-9]+')
+            rchar=$(grep 'rchar' $pid/io)
+            rchar_value=$(echo $rchar | grep -o -E '[0-9]+')
+            wchar=$(grep 'wchar' $pid/io)
+            wchar_value=$(echo $wchar | grep -o -E '[0-9]+')
+            process_date=$(ls -ld /proc/$pid)
+            process_date=$(echo $process_date | awk '{ print $6" "$7" "$8}')
+            rater=${read_rate_array[counter]}
+            ratew=${write_rate_array[counter]}
 
-        if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-            VmSize_value="N/A"
-        fi
-        if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-            VmRSS_value="N/A"
-        fi
+            if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+                VmSize_value="N/A"
+            fi
+            if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+                VmRSS_value="N/A"
+            fi
 
-        if [ $counter -ge $flag_p ]; then
-            break
+            if [ $counter -ge $flag_p ]; then
+                break
+            fi
+            printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$pid" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "$rater" "$ratew" "$process_date"
+            (( counter++ ))
         fi
-        printf '%-30s\t %-20s\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %5s\n' "$comm" "$user" "$pid" "$VmSize_value" "$VmRSS_value" "$rchar_value" "$wchar_value" "$rater" "$ratew" "$process_date"
-        (( counter++ ))
-
     done  | sort -n -k $sort_parameter $sort_reverse
 }
 #------------------------------------------Argumentos de entrada------------------------------------
@@ -88,12 +91,24 @@ while getopts "c:s:e:u:p:mtdwr"  OPTION; do
         sort_parameter=4
         ;;    
     t)
+        if [ $sort_parameter -ne 1 ]; then
+            echo "Invalid argument: multiple sort parameters detected"
+            exit 1
+        fi
         sort_parameter=5
         ;;  
     d)
+        if [ $sort_parameter -ne 1 ]; then
+            echo "Invalid argument: multiple sort parameters detected"
+            exit 1
+        fi
         sort_parameter=8
         ;; 
     w)
+        if [ $sort_parameter -ne 1 ]; then
+            echo "Invalid argument: multiple sort parameters detected"
+            exit 1
+        fi
         sort_parameter=9
         ;;   
     r)
@@ -107,6 +122,11 @@ while getopts "c:s:e:u:p:mtdwr"  OPTION; do
 done
 
 shift $((OPTIND-1))
+#------------------------------------------Validação de argumentos------------------------------------------------------
+if [ "$#" -ne 1 ] || ! [[ $1 =~ ^[0-9]+$ ]] || [ $1 -gt 2147483647 ] || [ $1 -lt 1 ]; then # If $1 (sleep) não for int ou for menor que 1 ou for maior que 2^31-1 ou o n de argumentos for diferente de 1
+    echo "Invalid argument sleep time"
+    exit 1
+fi
 #------------------------------------------Obter listas de PIDs-------------------------------------------------------
 pid_list=()
 pid_list2=()
@@ -173,10 +193,10 @@ read_io # ler rchar e wchar pela 2ª vez
 for i in ${!rchar_array[@]}; do # Calcular read rate e write rate em Bytes/s
     op1=${rchar_array[i]}
     op2=${first_rchar_array[i]}
-    read_rate=$(echo "scale=1; ($op1 - $op2)/$1" | bc)
+    read_rate=$(echo "scale=2; ($op1 - $op2)/$1" | bc)
     op1=${wchar_array[i]}
     op2=${first_wchar_array[i]}
-    write_rate=$(echo "scale=1; ($op1 - $op2)/$1" | bc)
+    write_rate=$(echo "scale=2; ($op1 - $op2)/$1" | bc)
 
     read_rate_array+=($read_rate)
     write_rate_array+=($write_rate)
