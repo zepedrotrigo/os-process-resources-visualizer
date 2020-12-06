@@ -1,8 +1,6 @@
 #!/bin/bash
-#TODO a flag das datas nao esta a funcionar bem
 #TODO validar args datas (ver se o user insere uma data com o formato valido)
 #TODO ULTIMO o sudo estraga a subtraçao de arrays. (experimentar fazer permutaçoes de ifs)
-#TODO ALINHAR CABEÇALHO
 cd /proc
 sort_parameter=1
 sort_reverse=""
@@ -157,7 +155,7 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
                 fi
             fi
             # Lista com PIDs que estão no intervalo de tempo definido pelas flags -s e -e
-            if [[ $flag_s != "" && $flag_e != "" ]]; then
+            if [[ $flag_s != "" && $flag_e != "" ]]; then #TODO esperar pela resposta do stor
                 pid_date=$(ls -ld /proc/$entry_basename)
                 pid_date=$(echo $pid_date | awk '{ print $6" "$7" "$8}')
                 pid_date=$(date -d "${pid_date}" +"%s")
@@ -202,5 +200,5 @@ for i in ${!rchar_array[@]}; do # Calcular read rate e write rate em Bytes/s
     write_rate_array+=($write_rate)
 done
 #-------------------------------------- Imprimir tabela ----------------------------------------------------------------
-printf '%-20s\t\t %10s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s\t %12s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
+printf '%-20s\t\t %8s\t\t %10s\t %10s\t %10s\t %10s\t %9s\t %10s\t %10s %16s\n' "COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE" # Cabeçalho da tabela
 process_list # devolve um array de processos
