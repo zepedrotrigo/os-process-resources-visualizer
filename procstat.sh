@@ -1,6 +1,5 @@
 #!/bin/bash
 #TODO validar args datas (ver se o user insere uma data com o formato valido)
-#TODO ULTIMO o sudo estraga a subtraçao de arrays. (experimentar fazer permutaçoes de ifs)
 cd /proc
 sort_parameter=1
 sort_reverse=""
@@ -133,6 +132,7 @@ pid_list3=()
 pid_list4=()
 min_date=$(date -d "${flag_s}" +"%s")
 max_date=$(date -d "${flag_e}" +"%s")
+
 for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em /proc/
     entry_basename="$(basename $entry)" # obter apenas o basename (caminho relativo da pasta) (o PID)
     if [[ $entry_basename =~ ^[0-9]+$ ]]; then # Obter apenas folders ou files com nomes apenas númericos
@@ -143,7 +143,7 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
             
             # Lista com PIDs que não contêm a FLAG -c
             if [[ $flag_c != "" ]]; then
-                comm=$(cat $entry_basename/comm)
+                comm=$(cat $entry/comm)
                 if ! [[ $comm =~ $flag_c ]]; then
                     pid_list2+=($entry_basename)
                 fi
@@ -152,18 +152,25 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
             if [[ $flag_u != "" ]]; then
                 uid="$( stat -c "%u" /proc/${entry_basename} )"
                 user="$( id -nu ${uid} )"
-                echo $user $flag_u
                 if ! [[ $user =~ $flag_u ]]; then
                     pid_list3+=($entry_basename)
                 fi
             fi
             # Lista com PIDs que estão no intervalo de tempo definido pelas flags -s e -e
-            if [[ $flag_s != "" && $flag_e != "" ]]; then #TODO esperar pela resposta do stor
+            if [[ $flag_s != "" || $flag_e != "" ]]; then #TODO esperar pela resposta do stor
                 pid_date=$(ls -ld /proc/$entry_basename)
                 pid_date=$(echo $pid_date | awk '{ print $6" "$7" "$8}')
                 pid_date=$(date -d "${pid_date}" +"%s")
-                if [ $pid_date -lt $min_date ] || [ $pid_date -gt $max_date ]; then
-                    pid_list4+=($entry_basename)
+
+                if [[ $flag_s != "" ]]; then
+                    if [ $pid_date -lt $min_date ]; then
+                        pid_list4+=($entry_basename)
+                    fi
+                fi
+                if [[ $flag_e != "" ]]; then
+                    if [ $pid_date -gt $max_date ]; then
+                        pid_list4+=($entry_basename)
+                    fi
                 fi
             fi
         fi
@@ -171,17 +178,15 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
 done
 
 # Subtrair arrays com PIDS que não contêm as flags ao array com os PIDs todos
-echo ${#pid_list[@]} - ${#pid_list3[@]}
-for i in "${pid_list2[@]}"; do
-    pid_list=(${pid_list[@]//*$i*})
+pids_to_remove_list=()
+pids_to_remove_list=( "${pid_list2[@]}" "${pid_list3[@]}" "${pid_list4[@]}" )
+for i in "${pids_to_remove_list[@]}"; do
+  for k in "${!pid_list[@]}"; do
+    if [[ ${pid_list[k]} = $i ]]; then
+      unset 'pid_list[k]'
+    fi
+  done
 done
-#for i in "${pid_list3[@]}"; do
-#    pid_list=(${pid_list[@]//*$i*})
-#done
-for i in "${pid_list4[@]}"; do
-    pid_list=(${pid_list[@]//*$i*})
-done
-echo ${#pid_list[@]}
 # ----------------------------------- Ler taxa de IO no intervalo de s segundos ----------------------------
 read_rate_array=() #Inicializar arrays
 write_rate_array=()
