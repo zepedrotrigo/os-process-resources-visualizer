@@ -34,7 +34,8 @@ process_list () {
     for pid in ${pid_list[@]}; do
         if [ -e /proc/$pid ]; then # verificar se a diretoria ainda existe
             comm=$(cat $pid/comm | tr " " "_")
-            user="$( ps -o uname= -p "${pid}" )"
+            uid="$( stat -c "%u" /proc/${pid} )"
+            user="$( id -nu ${uid} )"
             VmSize=$(grep 'VmSize' $pid/status) # Obter todas as linhas com VmSize
             VmSize_value=$(echo $VmSize | grep -o -E '[0-9]+') # Obter apenas o valor numérico
             VmRSS=$(grep 'VmRSS' $pid/status)
