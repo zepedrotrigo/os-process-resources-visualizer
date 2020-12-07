@@ -128,7 +128,7 @@ fi
 timePattern="^[A-Z][a-z][a-z] ([0-9]{1,2}) [0-2][0-3]:[0-5][0-9]$"
 
 if ! [[ "$flag_s" =~ $timePattern ]]; then
-    echo "OLAInvalid Date Format! Date Format: mmm/(d)d/hh:mm"
+    echo "Invalid Date Format! Date Format: mmm/(d)d/hh:mm"
     exit 
 fi
 #------------------------------------------Obter listas de PIDs-------------------------------------------------------
