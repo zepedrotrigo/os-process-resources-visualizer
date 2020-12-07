@@ -127,7 +127,11 @@ fi
 
 timePattern="^[A-Z][a-z][a-z] ([0-9]{1,2}) [0-2][0-3]:[0-5][0-9]$"
 
-if ! [[ "$flag_s" =~ $timePattern ]]; then
+if ! [[ "$flag_s" =~ $timePattern ]] && [[ "$flag_s" != "" ]]; then
+    echo "Invalid Date Format! Date Format: mmm/(d)d/hh:mm"
+    exit 
+fi
+if ! [[ "$flag_e" =~ $timePattern ]] && [[ "$flag_e" != "" ]]; then
     echo "Invalid Date Format! Date Format: mmm/(d)d/hh:mm"
     exit 
 fi
