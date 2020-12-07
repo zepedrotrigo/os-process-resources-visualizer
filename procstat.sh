@@ -132,6 +132,7 @@ if ! [[ "$flag_s" =~ $timePattern ]]; then
     echo "OLAInvalid Date Format! Date Format: mmm/(d)d/hh:mm"
     exit 
 fi
+#ola
 #------------------------------------------Obter listas de PIDs-------------------------------------------------------
 pid_list=()
 pid_list2=()
