@@ -1,5 +1,4 @@
 #!/bin/bash
-#TODO validar args datas (ver se o user insere uma data com o formato valido)
 cd /proc
 sort_parameter=1
 sort_reverse=""
@@ -126,13 +125,12 @@ if [ "$#" -ne 1 ] || ! [[ $1 =~ ^[0-9]+$ ]] || [ $1 -gt 2147483647 ] || [ $1 -lt
     exit 1
 fi
 
-timePattern="^[A-Z][a-z][a-z] ([1-9]{1,2}) [0-2][0-3]:[0-5][0-9]$"
+timePattern="^[A-Z][a-z][a-z] ([0-9]{1,2}) [0-2][0-3]:[0-5][0-9]$"
 
 if ! [[ "$flag_s" =~ $timePattern ]]; then
     echo "OLAInvalid Date Format! Date Format: mmm/(d)d/hh:mm"
     exit 
 fi
-#ola
 #------------------------------------------Obter listas de PIDs-------------------------------------------------------
 pid_list=()
 pid_list2=()
@@ -169,10 +167,9 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
                 pid_date=$(ls -ld /proc/$entry_basename)
                 pid_date=$(echo $pid_date | awk '{ print $6" "$7" "$8}')
                 pid_date=$(date -d "${pid_date}" +"%s")
-                echo $pid_date
                 re='^[0-9]+$'
-                if ! [[ "$pid_date" =~ $re ]] ; then
-                    echo "GAYInvalid Date Format! Date Format: mmm/(d)d/hh:mm"; exit 1
+                if ! ([[ "$min_date" =~ $re ]] && [[ "$max_date" =~ $re ]]) ; then
+                    echo "Invalid Date Format! Date Format: mmm/(d)d/hh:mm"; exit 1
                 fi
 
                 if [[ $flag_s != "" ]]; then
