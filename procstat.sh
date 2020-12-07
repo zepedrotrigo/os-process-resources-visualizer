@@ -125,6 +125,13 @@ if [ "$#" -ne 1 ] || ! [[ $1 =~ ^[0-9]+$ ]] || [ $1 -gt 2147483647 ] || [ $1 -lt
     echo "Invalid argument sleep time"
     exit 1
 fi
+
+timePattern="^[A-Z][a-z][a-z] ([1-9]{1,2}) [0-2][0-3]:[0-5][0-9]$"
+
+if ! [[ "$flag_s" =~ $timePattern ]]; then
+    echo "OLAInvalid Date Format! Date Format: mmm/(d)d/hh:mm"
+    exit 
+fi
 #------------------------------------------Obter listas de PIDs-------------------------------------------------------
 pid_list=()
 pid_list2=()
@@ -157,10 +164,15 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
                 fi
             fi
             # Lista com PIDs que estão no intervalo de tempo definido pelas flags -s e -e
-            if [[ $flag_s != "" || $flag_e != "" ]]; then #TODO esperar pela resposta do stor
+            if [[ $flag_s != "" || $flag_e != "" ]]; then
                 pid_date=$(ls -ld /proc/$entry_basename)
                 pid_date=$(echo $pid_date | awk '{ print $6" "$7" "$8}')
                 pid_date=$(date -d "${pid_date}" +"%s")
+                echo $pid_date
+                re='^[0-9]+$'
+                if ! [[ "$pid_date" =~ $re ]] ; then
+                    echo "GAYInvalid Date Format! Date Format: mmm/(d)d/hh:mm"; exit 1
+                fi
 
                 if [[ $flag_s != "" ]]; then
                     if [ $pid_date -lt $min_date ]; then
