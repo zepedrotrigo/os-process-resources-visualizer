@@ -48,13 +48,6 @@ process_list () {
             rater=${read_rate_array[counter]}
             ratew=${write_rate_array[counter]}
 
-            if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-                VmSize_value="N/A"
-            fi
-            if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
-                VmRSS_value="N/A"
-            fi
-
             if [ $counter -ge $flag_p ]; then
                 break
             fi
