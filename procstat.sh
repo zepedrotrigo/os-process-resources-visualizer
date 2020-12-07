@@ -49,10 +49,10 @@ process_list () {
             rater=${read_rate_array[counter]}
             ratew=${write_rate_array[counter]}
 
-            if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+            if [[ $VmSize_value == "" ]]; then # Se o valor for "" alterar para 0
                 VmSize_value="0"
             fi
-            if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para "N/A"
+            if [[ $VmRSS_value == "" ]]; then # Se o valor for "" alterar para 0
                 VmRSS_value="0"
             fi
 
@@ -150,9 +150,11 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
             fi
             # Lista com PIDs que não contêm a flag -u
             if [[ $flag_u != "" ]]; then
-                user="$( ps -o uname= -p "${entry_basename}" )"
+                uid="$( stat -c "%u" /proc/${entry_basename} )"
+                user="$( id -nu ${uid} )"
+                echo $user $flag_u
                 if ! [[ $user =~ $flag_u ]]; then
-                pid_list3+=($entry_basename)
+                    pid_list3+=($entry_basename)
                 fi
             fi
             # Lista com PIDs que estão no intervalo de tempo definido pelas flags -s e -e
@@ -169,13 +171,13 @@ for entry in /proc/*; do # ciclo for para cada ficheiro ou diretoria contido em 
 done
 
 # Subtrair arrays com PIDS que não contêm as flags ao array com os PIDs todos
-echo ${#pid_list[@]} - ${#pid_list2[@]} - ${#pid_list3[@]} - ${#pid_list4[@]}
+echo ${#pid_list[@]} - ${#pid_list3[@]}
 for i in "${pid_list2[@]}"; do
     pid_list=(${pid_list[@]//*$i*})
 done
-for i in "${pid_list3[@]}"; do
-    pid_list=(${pid_list[@]//*$i*})
-done
+#for i in "${pid_list3[@]}"; do
+#    pid_list=(${pid_list[@]//*$i*})
+#done
 for i in "${pid_list4[@]}"; do
     pid_list=(${pid_list[@]//*$i*})
 done
